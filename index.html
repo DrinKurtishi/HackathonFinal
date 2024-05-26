@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmenta Protection Initiative</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="logo_part">
+                <div class="logo">
+                    <img src="homepage_photos/LogoD.png" height="95px" alt="Logo">
+                </div>
+                <div class="name">
+                    Environmental Protection Initiative
+                </div>
+            </div>
+
+            <div class="list_part">
+                <div class="about_us">
+                    <a href="about_us.html">About us</a>
+                </div>
+                <!-- <div class="hall_of_fame">
+                    <a href="hall_of_fame.html">Hall of fame</a>
+                </div> -->
+            </div>
+    
+        </div>
+    </div>
+
+    <div class="main">
+        <div id="abc" class="container">
+            <div class="col">
+                <h1>Go Green<br>Breathe Clean</h1>
+                <h3>Living green means living in harmony with the nature that surrounds you.</h3><br>
+
+                <br>Our application promotes green living environment by engaging in maintaining <br>
+                the balance between the citizen and the space that surrounds him.<br>
+                It allows anyone to report any violations they witness and prevents
+                <br>censorship of information that may be done by government or corporate interests.<br>
+                
+                <br>Your click promotes freedom and healthier life.<br>
+                <!-- <br><br><br><br><br><br><br><br><br>
+                <br>Our organization gathers pollution reports in our area.</br>You can help the environment by reporting here...</br>
+                Together, let's pave the way for a cleaner and greener future.</p> -->
+                <a href="view_reports_DRIN.html" target="_blank" class="btn">View All Reports &#8594;</a>
+                <a href="add_reports_DRIN.html" target="_blank" class="btn1"><b>Make a Report &#8594;</b></a>
+            </div>
+            <div class="col">
+                <img src="homepage_photos/pngworld.png">
+            </div>
+        </div>
+    </div>
+
+    <!-- <div class="main">
+        <div class="container">
+            <div class="reports">
+                <div class="report_issue">
+                    <a href="report_issue.html">Make A Report</a>
+                </div>
+                <div class="view_reports">
+                    <a href="viewReports.html">View all reports</a>
+                </div>
+            </div>
+            <div class="worst_hotspots">
+                <div class="slideshow">
+                    <div class="slide fade">
+                        <img src="homepage_photos/tetovoParea1.jpg" alt="Photo 1">
+                    </div>
+                    <div class="slide fade">
+                        <img src="homepage_photos/tetovoParea2.jpg" alt="Photo 2">
+                    </div>
+                    <div class="slide fade">
+                        <img src="homepage_photos/tetovoParea3.jpg" alt="Photo 3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <div class="footer">
+        <div class="container">
+            <div class="copyright">&copy; 2024 EPI, Inc. All rights reserved.</div>
+            <div class="ecologic"><a href="https://ecologic.mk/">ECO logic</a></div>
+            <div class="logo">
+                <img src="homepage_photos/FooterL.png" height="200px" alt="Logo">
+            </div>
+            <div class="civica-mobilitas"><a href="https://civicamobilitas.mk/">CIVICA mobilitas</a></div>
+            <div class="ced"><a href="https://ced.org.mk/new/">CED</a></div>
+        </div>
+    </div>
+
+    <script>
+        let slideIndex = 0;
+    showSlides();
+
+    function showSlides() {
+    let slides = document.getElementsByClassName("slide");
+    for (let i = 0; i < slides.length; i++) {
+        slides[i].style.display = "none";  
+    }
+    slideIndex++;
+    if (slideIndex > slides.length) {slideIndex = 1}    
+    slides[slideIndex-1].style.display = "block";  
+    setTimeout(showSlides, 7000); // Change image every 7 seconds
+    }
+
+    </script>
+
+</body>
+</html>

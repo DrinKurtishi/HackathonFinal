@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Reports</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .report-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .report {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%; /* Set each report to occupy 100% width */
+            box-sizing: border-box;
+            max-width: 600px; /* Optional: Set a maximum width for each report */
+        }
+        .report img {
+            width: 100%; /* Set the width of the image to fill the container */
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Ensure image is centered within the container */
+            margin-bottom: 10px; /* Add some space below the image */
+        }
+        /* Reset default styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f7ee; /* Soft green background */
+}
+
+h1 {
+    text-align: center;
+    margin: 20px 0;
+    color: #377a3b; /* Dark green heading */
+}
+
+.report-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+.report {
+    border: 1px solid #b8d8a9; /* Light green border */
+    background-color: #edf7eb; /* Light green background */
+    border-radius: 4px;
+    max-width: 600px;
+    width: 100%;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.report:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.report img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.report p {
+    margin-bottom: 5px;
+    color: #377a3b; /* Dark green text */
+}
+
+    </style>
+</head>
+<body>
+    <h1>Individual reports</h1>
+    <div class="report-container" id="reportContainer"></div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const lat = urlParams.get('lat');
+        const lng = urlParams.get('lng');
+
+        // Fetch data from the server
+        fetch('get_db.php')
+            .then(response => response.json())
+            .then(data => {
+                const reportContainer = document.getElementById('reportContainer');
+
+                // Filter data based on coordinates
+                const filteredData = data.filter(report => {
+                    const coords = report.position_id.split(',');
+                    return coords[0] === lat && coords[1] === lng;
+                });
+
+                // Reverse the order of filtered reports to show the latest post on top
+                filteredData.reverse().forEach(report => {
+                    // Create a div for each report
+                    const reportDiv = document.createElement('div');
+                    reportDiv.className = 'report';
+
+                    // Create an image element
+                    const img = document.createElement('img');
+                    img.src = report.image_path;
+                    img.alt = 'Report Image';
+
+                    // Create a description element with coordinates
+                    const desc = document.createElement('p');
+                    desc.textContent = `Description: ${report.desc}`;
+                    const coords = document.createElement('p');
+                    coords.innerHTML = `Coordinates: <a href="add_reports_DRIN.html?lat=${report.position_id.split(',')[0]}&lng=${report.position_id.split(',')[1]}" target="_blank">${report.position_id}</a>`;
+
+                    // Append elements to the report div
+                    reportDiv.appendChild(img);
+                    reportDiv.appendChild(desc);
+                    reportDiv.appendChild(coords);
+
+                    // Append report div to the container
+                    reportContainer.appendChild(reportDiv);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>

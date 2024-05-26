@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make a report</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+     <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
+    <style>
+        #map { height: 100vh;
+               width: 100vw; 
+             }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+
+    var map;
+    if (lat && lng) {
+        // Use the provided coordinates if available
+        map = L.map('map').setView([lat, lng], 18);
+    } else {
+        // Default coordinates if no parameters are provided
+        map = L.map('map').setView([42.0106, 20.9716], 14);
+    }
+
+    // Add a tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+    }).addTo(map);
+
+// Store generated dots
+var mergedDots = [];
+    // Fetch data from the server
+    console.log('Attempting to fetch data...');
+    fetch('get_db.php')
+        .then(response => {
+            console.log('Response received:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Data received:', data);
+            data.forEach(dot => {
+                if (dot.position_id) {
+                    var latLng = dot.position_id.split(',').map(Number);
+                    if (latLng.length === 2) {
+                        var color = getColorByReports(1); // Assuming each report has 1 report initially
+
+                        var circle = L.circle(latLng, {
+                            radius: 12, // 12 meters radius
+                            color: 'gray',
+                            fillColor: 'gray',
+                            fillOpacity: 0.2 // Faint color
+                        }).addTo(map);
+
+                        var marker = L.circleMarker(latLng, {
+                            radius: 5,
+                            color: color,
+                            fillColor: color,
+                            fillOpacity: 1 // fill opacity remains constant
+                        }).addTo(map).bindPopup(`
+                            Reports: 1<br>
+                            <button onclick="openReportForm(${latLng[0]}, ${latLng[1]})">Submit Another Report</button><br>
+                            <a href="view_reports_individual.html?lat=${lat}&lng=${lng}" target="_blank"><button>View All Reports</button></a>
+                        `);
+
+                        dot.circle = circle;
+                        dot.marker = marker;
+                        mergedDots.push(dot);
+                    } else {
+                        console.error('Invalid position_id format:', dot.position_id);
+                    }
+                } else {
+                    console.error('Missing position_id:', dot);
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+
+
+
+// Event listener for map click
+map.on('click', onMapClick);
+
+function onMapClick(e) {
+    console.log('Clicked event: ', e);
+    var lat = e.latlng.lat;
+    var lng = e.latlng.lng;
+
+    var confirmPopup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent(`<p>Are you sure you want to add a report to this location?</p><button onclick="openReportForm(${lat}, ${lng})">Yes</button><button onclick="map.closePopup()">No</button>`)
+        .openOn(map);
+}
+
+function openReportForm(lat, lng) {
+    var popupContent = `
+        <form id="reportForm" onsubmit="submitReport(event, ${lat}, ${lng})">
+            <p>Please provide a description for the report:</p>
+            <textarea id="description" name="description" rows="2" cols="30"></textarea>
+            <p>Upload an image:</p>
+            <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+            <input type="hidden" name="lat" value="${lat}" />
+            <input type="hidden" name="lng" value="${lng}" />
+            <br/>
+            <button type="submit">Submit</button>
+        </form>
+    `;
+
+    // Create popup and set its content
+    var popup = L.popup()
+        .setLatLng([lat, lng])
+        .setContent(popupContent)
+        .openOn(map);
+}
+
+
+function submitReport(event, lat, lng) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Retrieve description from input field
+    var reportDescription = document.getElementById('description').value;
+
+    // Retrieve image file
+    var imageFile = document.getElementById('avatar').files[0];
+
+    // Check if both description and image are provided
+    if (!reportDescription || !imageFile) {
+        var popupContent = `
+            <p>Please provide both a description and an image.</p>
+            <button onclick="map.closePopup()">Close</button>
+        `;
+
+        var warningPopup = L.popup()
+            .setLatLng([lat, lng])
+            .setContent(popupContent)
+            .openOn(map);
+
+        return;
+    }
+
+    // Find the existing dot, if any
+    var existingDot = mergedDots.find(dot => dot.coordinates && dot.coordinates[0] === lat && dot.coordinates[1] === lng);
+
+    if (existingDot && existingDot.marker) {
+        // Increment the report number
+        existingDot.reports++;
+
+        // Update the popup content
+        existingDot.marker.setPopupContent(`Reports: ${existingDot.reports}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button><br><a href="view_reports_individual.html?lat=${lat}&lng=${lng}" target="_blank"><button>View All Reports</button></a>`);
+
+        // Update the color of the circle marker
+        existingDot.marker.setStyle({ color: getColorByReports(existingDot.reports), fillColor: getColorByReports(existingDot.reports) });
+    } else {
+        // Add the new dot to the mergedDots array
+        var newDot = {
+            coordinates: [lat, lng],
+            reports: 1,
+            description: reportDescription
+        };
+        mergedDots.push(newDot);
+
+        // Add a new marker for the new dot
+        var color = getColorByReports(1);
+        console.log('New marker Latitude:', lat, 'Longitude:', lng);
+        var newMarker = L.circleMarker([lat, lng], {
+            radius: 6,
+            color: color,
+            fillColor: color,
+            fillOpacity: 1
+        }).addTo(map).bindPopup(`Reports: 1<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button><br><a href="view_reports_individual.html?lat=${lat}&lng=${lng}" target="_blank"><button>View All Reports</button></a>`);
+
+        // Store the marker reference in the dot object
+        newDot.marker = newMarker;
+    }
+
+    // Close the popup
+    map.closePopup();
+
+    // Create FormData object to send data via AJAX
+    var formData = new FormData();
+    formData.append('position_id', [lat, lng]);
+    formData.append('desc', reportDescription);
+    formData.append('avatar', imageFile);
+
+    // Send AJAX request
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'add_reports.php', true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Request was successful, handle response here
+            console.log(xhr.responseText);
+            // You can update the map here or show a confirmation message
+        } else {
+            // Request failed, handle error here
+            console.error(xhr.statusText);
+            // You can show an error message to the user
+        }
+    };
+    xhr.send(formData);
+}
+
+
+
+
+function getColorByReports(reports) {
+    if (reports < 10) {
+        return 'green';
+    } else if (reports < 20) {
+        return 'blue';
+    } else if (reports < 30) {
+        return 'orange';
+    } else if (reports < 40) {
+        return 'red';
+    } else {
+        return 'purple';
+    }
+}
+
+// Update marker size based on zoom level
+map.on('zoomend', function() {
+    var zoomLevel = map.getZoom();
+    mergedDots.forEach(function(dot) {
+        var radius = calculateRadius(zoomLevel);
+        dot.marker.setRadius(radius);
+    });
+});
+
+// Calculate marker radius based on zoom level
+function calculateRadius(zoomLevel) {
+    // Adjust these values based on your preference and map's behavior
+    var baseRadius = 6;
+    var maxZoom = 18;
+    var minRadius = 3;
+
+    // Calculate radius based on zoom level
+    var zoomDifference = maxZoom - zoomLevel;
+    var radius = baseRadius + zoomDifference;
+
+    // Ensure radius doesn't go below a minimum value
+    if (radius < minRadius) {
+        radius = minRadius;
+    }
+
+    return radius;
+}
+
+/*
+function submitReport(event, lat, lng) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Retrieve description from input field
+    var reportDescription = document.getElementById('description').value;
+
+    // Retrieve image file
+    var imageFile = document.getElementById('avatar').files[0];
+
+     // Check if both description and image are provided
+     if (!reportDescription || !imageFile) {
+            var popupContent = `
+                <p>Please provide both a description and an image.</p>
+                <button onclick="map.closePopup()">Close</button>
+            `;
+
+            var warningPopup = L.popup()
+                .setLatLng([lat, lng])
+                .setContent(popupContent)
+                .openOn(map);
+
+            return;
+        }
+
+    // Find the existing dot, if any
+    var existingDot = mergedDots.find(dot => dot.coordinates && dot.coordinates[0] === lat && dot.coordinates[1] === lng);
+
+    if (existingDot) {
+        // Increment the report number
+        existingDot.reports++;
+
+        // Update the popup content
+        existingDot.marker.setPopupContent(`Reports: ${existingDot.reports}<br>Description: ${existingDot.description}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button>`);
+
+
+        // Update the color of the circle marker
+        existingDot.marker.setStyle({ color: getColorByReports(existingDot.reports), fillColor: getColorByReports(existingDot.reports) });
+    } else {
+        // Add the new dot to the mergedDots array
+        var newDot = {
+            coordinates: [lat, lng],
+            reports: 1,
+            description: reportDescription
+        };
+        mergedDots.push(newDot);
+
+        // Add a new marker for the new dot
+        var color = getColorByReports(1);
+        console.log('New marker Latitude:', lat, 'Longitude:', lng);
+        var newMarker = L.circleMarker([lat, lng], {
+            radius: 6,
+            color: color,
+            fillColor: color,
+            fillOpacity: 1
+        }).addTo(map).bindPopup(`Reports: 1<br>Description: ${reportDescription}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button>`);
+
+        // Store the marker reference in the dot object
+        newDot.marker = newMarker;
+
+
+    }
+
+    // Close the popup
+    map.closePopup();
+
+    // Create FormData object to send data via AJAX
+    var formData = new FormData();
+    formData.append('position_id', [lat, lng]);
+    formData.append('desc', reportDescription);
+    formData.append('avatar', imageFile);
+
+    // Send AJAX request
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'add_reports.php', true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Request was successful, handle response here
+            console.log(xhr.responseText);
+            // You can update the map here or show a confirmation message
+        } else {
+            // Request failed, handle error here
+            console.error(xhr.statusText);
+            // You can show an error message to the user
+        }
+    };
+    xhr.send(formData);
+}
+*/
+
+/*
+var map = L.map('map').setView([42.0106, 20.9716], 14);
+
+// Add a tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+}).addTo(map);
+
+// Store generated dots
+var mergedDots = [];
+
+// Fetch data from the server
+console.log('Attempting to fetch data...');
+fetch('get_db.php')
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Data received:', data);
+        data.forEach(dot => {
+            var latLng = dot.position_id.split(',').map(Number);
+            var color = getColorByReports(1); // Assuming each report has 1 report initially
+
+            var circle = L.circle(latLng, {
+                radius: 12, // 12 meters radius
+                color: 'gray',
+                fillColor: 'gray',
+                fillOpacity: 0.2 // Faint color
+            }).addTo(map);
+
+            var marker = L.circleMarker(latLng, {
+                radius: 5,
+                color: color,
+                fillColor: color,
+                fillOpacity: 1 // fill opacity remains constant
+            }).addTo(map).bindPopup(`
+                Reports: 1<br>
+                Description: ${dot.desc}<br>
+                <img src="${dot.image_path}" alt="Image" style="width: 100px; height: auto;" /><br>
+                <button onclick="openReportForm(${latLng[0]}, ${latLng[1]})">Submit Another Report</button>
+            `);
+
+            dot.circle = circle;
+            dot.marker = marker;
+            mergedDots.push(dot);
+        });
+    })
+    .catch(error => console.error('Error fetching data:', error));
+
+
+
+// Event listener for map click
+map.on('click', onMapClick);
+
+function onMapClick(e) {
+    console.log('Clicked event: ', e);
+    var lat = e.latlng.lat;
+    var lng = e.latlng.lng;
+
+    var confirmPopup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent(`<p>Are you sure you want to add a report to this location?</p><button onclick="openReportForm(${lat}, ${lng})">Yes</button><button onclick="map.closePopup()">No</button>`)
+        .openOn(map);
+}
+
+function openReportForm(lat, lng) {
+    var popupContent = `
+        <form id="reportForm" onsubmit="submitReport(event, ${lat}, ${lng})">
+            <p>Please provide a description for the report:</p>
+            <textarea id="description" name="description" rows="2" cols="30"></textarea>
+            <p>Upload an image:</p>
+            <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+            <input type="hidden" name="lat" value="${lat}" />
+            <input type="hidden" name="lng" value="${lng}" />
+            <br/>
+            <button type="submit">Submit</button>
+        </form>
+    `;
+
+    // Create popup and set its content
+    var popup = L.popup()
+        .setLatLng([lat, lng])
+        .setContent(popupContent)
+        .openOn(map);
+}
+
+function submitReport(event, lat, lng) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Retrieve description from input field
+    var reportDescription = document.getElementById('description').value;
+
+    // Retrieve image file
+    var imageFile = document.getElementById('avatar').files[0];
+
+    // Find the existing dot, if any
+    var existingDot = mergedDots.find(dot => dot.coordinates && dot.coordinates[0] === lat && dot.coordinates[1] === lng);
+
+    if (existingDot) {
+        // Increment the report number
+        existingDot.reports++;
+
+        // Update the popup content
+        existingDot.marker.setPopupContent(`Reports: ${existingDot.reports}<br>Description: ${existingDot.description}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button>`);
+
+        // Update the color of the circle marker
+        existingDot.marker.setStyle({ color: getColorByReports(existingDot.reports), fillColor: getColorByReports(existingDot.reports) });
+    } else {
+        // Add the new dot to the mergedDots array
+        var newDot = {
+            coordinates: [lat, lng],
+            reports: 1,
+            description: reportDescription
+        };
+        mergedDots.push(newDot);
+
+        // Add a new marker for the new dot
+        var color = getColorByReports(1);
+        console.log('New marker Latitude:', lat, 'Longitude:', lng);
+        var newMarker = L.circleMarker([lat, lng], {
+            radius: 6,
+            color: color,
+            fillColor: color,
+            fillOpacity: 1
+        }).addTo(map).bindPopup(`Reports: 1<br>Description: ${reportDescription}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button>`);
+
+        // Store the marker reference in the dot object
+        newDot.marker = newMarker;
+    }
+
+    // Close the popup
+    map.closePopup();
+
+    // Create FormData object to send data via AJAX
+    var formData = new FormData();
+    formData.append('position_id', [lat, lng]);
+    formData.append('desc', reportDescription);
+    formData.append('avatar', imageFile);
+
+    // Send AJAX request
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'add_reports.php', true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Request was successful, handle response here
+            console.log(xhr.responseText);
+            // You can update the map here or show a confirmation message
+        } else {
+            // Request failed, handle error here
+            console.error(xhr.statusText);
+            // You can show an error message to the user
+        }
+    };
+    xhr.send(formData);
+}
+
+function getColorByReports(reports) {
+    if (reports < 10) {
+        return 'green';
+    } else if (reports < 20) {
+        return 'blue';
+    } else if (reports < 30) {
+        return 'orange';
+    } else if (reports < 40) {
+        return 'red';
+    } else {
+        return 'purple';
+    }
+}
+
+// Update marker size based on zoom level
+map.on('zoomend', function() {
+    var zoomLevel = map.getZoom();
+    var baseRadius = 6;
+    mergedDots.forEach(function(dot) {
+        var newRadius = baseRadius / Math.pow(2, zoomLevel - 14); // Adjust 14 to your initial zoom level
+        dot.marker.setRadius(newRadius);
+    });
+});
+*/
+
+// var map = L.map('map').setView([42.0106, 20.9716], 14);
+
+// // Add a tile layer
+// L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//     maxZoom: 18,
+// }).addTo(map);
+
+// // Store generated dots
+// var mergedDots = [];
+
+// // Fetch data from the server
+// console.log('Attempting to fetch data...');
+// fetch('get_db.php')
+//     .then(response => {
+//         console.log('Response received:', response);
+//         return response.json();
+//     })
+//     .then(data => {
+//         console.log('Data received:', data);
+//         data.forEach(dot => {
+//             var latLng = dot.position_id.split(',').map(Number);
+//             var color = getColorByReports(1); // Assuming each report has 1 report initially
+
+//             var circle = L.circle(latLng, {
+//                 radius: 12, // 12 meters radius
+//                 color: 'gray',
+//                 fillColor: 'gray',
+//                 fillOpacity: 0.2 // Faint color
+//             }).addTo(map);
+
+//             var marker = L.circleMarker(latLng, {
+//                 radius: 5,
+//                 color: color,
+//                 fillColor: color,
+//                 fillOpacity: 1 // fill opacity remains constant
+//             }).addTo(map).bindPopup(`
+//                 Reports: 1<br>
+//                 Description: ${dot.desc}<br>
+//                 <img src="${dot.image_path}" alt="Image" style="width: 100px; height: auto;" /><br>
+//                 <button onclick="openReportForm(${latLng[0]}, ${latLng[1]})">Submit Another Report</button>
+//             `);
+
+//             dot.circle = circle;
+//             dot.marker = marker;
+//             mergedDots.push(dot);
+//         });
+//     })
+//     .catch(error => console.error('Error fetching data:', error));
+
+// // Event listener for map click
+// map.on('click', onMapClick);
+
+// function onMapClick(e) {
+//     var lat = e.latlng.lat;
+//     var lng = e.latlng.lng;
+
+//     var confirmPopup = L.popup()
+//         .setLatLng(e.latlng)
+//         .setContent(`<p>Are you sure you want to add a report to this location?</p><button onclick="openReportForm(${lat}, ${lng})">Yes</button><button onclick="map.closePopup()">No</button>`)
+//         .openOn(map);
+// }
+
+// function openReportForm(lat, lng) {
+//     var popupContent = `
+//         <form id="reportForm" onsubmit="submitReport(event, ${lat}, ${lng})">
+//             <p>Please provide a description for the report:</p>
+//             <textarea id="description" name="description" rows="2" cols="30"></textarea>
+//             <p>Upload an image:</p>
+//             <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+//             <input type="hidden" name="lat" value="${lat}" />
+//             <input type="hidden" name="lng" value="${lng}" />
+//             <br/>
+//             <button type="submit">Submit</button>
+//         </form>
+//     `;
+
+//     // Create popup and set its content
+//     var popup = L.popup()
+//         .setLatLng([lat, lng])
+//         .setContent(popupContent)
+//         .openOn(map);
+// }
+
+// function submitReport(event, lat, lng) {
+//     event.preventDefault(); // Prevent default form submission
+
+//     // Retrieve description from input field
+//     var reportDescription = document.getElementById('description').value;
+//     // Retrieve image file
+//     var imageFile = document.getElementById('avatar').files[0];
+//     console.log(imageFile);
+
+//     if (reportDescription.trim() !== '' && imageFile) {
+
+//         //Find the existing dot, if any
+//         var existingDot = mergedDots.find(dot => dot.coordinates[0] === lat && dot.coordinates[1] === lng);
+
+//         if (existingDot) {
+//             // Increment the report number
+//             existingDot.reports++;
+
+//             // Update the popup content
+//             existingDot.marker.setPopupContent(`Reports: ${existingDot.reports}<br>Description: ${existingDot.description}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button>`);
+
+//             // Update the color of the circle marker
+//             existingDot.marker.setStyle({ color: getColorByReports(existingDot.reports), fillColor: getColorByReports(existingDot.reports) });
+//         } else {
+//             // Add the new dot to the mergedDots array
+//             var newDot = {
+//                 coordinates: [lat, lng],
+//                 reports: 1,
+//                 description: reportDescription
+//             };
+//             mergedDots.push(newDot);
+
+//             // Add a new marker for the new dot
+//             var color = getColorByReports(1);
+//             var newMarker = L.circleMarker([lat, lng], {
+//                 radius: 6,
+//                 color: color,
+//                 fillColor: color,
+//                 fillOpacity: 1
+//             }).addTo(map).bindPopup(`Reports: 1<br>Description: ${reportDescription}<br><button onclick="openReportForm(${lat}, ${lng})">Submit Another Report</button>`);
+
+//             // Store the marker reference in the dot object
+//             newDot.marker = newMarker;
+//         }
+
+//         // Close the popup
+//         map.closePopup();
+
+//         // Create FormData object to send data via AJAX
+//         var formData = new FormData();
+//         formData.append('position_id', [lat, lng]);
+//         formData.append('desc', reportDescription);
+//         formData.append('avatar', imageFile);
+
+//         // Send AJAX request
+//         var xhr = new XMLHttpRequest();
+//         xhr.open('POST', 'add_reports.php', true);
+//         xhr.onload = function () {
+//             if (xhr.status === 200) {
+//                 // Request was successful, handle response here
+//                 console.log(xhr.responseText);
+//                 // You can update the map here or show a confirmation message
+//             } else {
+//                 // Request failed, handle error here
+//                 console.error(xhr.statusText);
+//                 // You can show an error message to the user
+//             }
+//         };
+//         xhr.send(formData);
+//     } else {
+//         L.popup().setLatLng([lat, lng])
+// .setContent("Please provide both description and image.")
+// .openOn(map);
+// }
+// }
+
+// function getColorByReports(reports) {
+// if (reports < 10) {
+// return 'green';
+// } else if (reports < 20) {
+// return 'blue';
+// } else if (reports < 30) {
+// return 'orange';
+// } else if(reports < 40){
+// return 'red';
+// } else {
+// return 'purple';
+// }
+// }
+
+// // Update marker size based on zoom level
+// map.on('zoomend', function() {
+// var zoomLevel = map.getZoom();
+// var baseRadius = 6;
+// mergedDots.forEach(function(dot) {
+//     var newRadius = baseRadius / Math.pow(2, zoomLevel - 14); // Adjust 14 to your initial zoom level
+//     dot.marker.setRadius(newRadius);
+// });
+// });
+</script>
+</body>
+</html>

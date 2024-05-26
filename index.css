@@ -1,0 +1,350 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+a {
+    text-decoration: none;
+    color: #000;
+}
+
+.main {
+    display: flex;
+    justify-content: center;
+    margin: auto;
+    padding-left: 25px; 
+    padding-right: 25px;
+    background-color: rgb(232, 224, 210);
+}
+
+.main .container{
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.col {
+    flex-basis: 50%;
+    min-width: 300px;
+}
+
+.col img {
+    max-width: 100%;
+    padding: 50px 0;
+}
+
+.col h1 {
+    color: #172621;
+    font-size: 50px;
+    /* line-height: 60px; */
+    margin: 5px 0;
+}
+
+.col h3{
+    color:#172621;
+    margin-top: 5px;
+    margin-bottom: -25px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.btn {
+    display: inline-block;
+    background: #172621;
+    color: white;
+    padding: 8px 30px;
+    margin: 30px 0;
+    border-radius: 30px;
+    transition: background 1s;
+}
+
+.btn1 {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 16px;
+    color: #172621; /* Text color */
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.btn1:visited {
+    color: #172621; /* Visited link color */
+    margin: 10px;
+}
+
+.btn:hover {
+    color: #172621;
+    background: rgb(232, 224, 210);
+    font-weight: 700;
+}
+
+.footer .container, .header .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.footer a{
+    color: white;
+}
+.header {
+    background-color: #f8f9fa;
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #172621;
+}
+#abc{
+    display: flex!important;
+    flex-direction: unset!important;
+    max-width: 1200px!important;
+    justify-content: space-around!important;
+}
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    flex:2;
+    align-items: center;
+}
+
+.logo_part, .list_part{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+    color: white;
+}
+
+.name{
+    font-family: "Garamond", "Georgia", serif;
+    font-size: 1.5em;
+    font-weight: 900;
+    color: rgb(232, 224, 210);
+}
+
+.about_us {
+    color: white;
+}
+
+/* .header .logo {
+    flex: 1;
+} */
+
+.header .navigation {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.header .navigation a {
+    padding: 10px 15px;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    transition: background-color 0.3s;
+}
+
+.header .navigation a:hover {
+    background-color: #0056b3;
+}
+.about_us a {
+    padding: 15px 25px;
+    border-radius: 30px;
+    background-color: rgb(232, 224, 210);
+    color: #172621;
+    transition: background-color 0.3s;
+}
+.about_us a:hover{
+    background-color: #172621;
+    color: rgb(232, 224, 210);
+}
+
+/* Main section styles */
+/* .main {
+    padding: 60px 0;
+    position: relative;
+} */
+
+/* .main::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('homepage_photos/APTE.svg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.8; 
+    z-index: -1; 
+}
+
+
+.main > * {
+    position: relative;
+    z-index: 1;
+}
+
+.main .container {
+    flex-direction:column;
+    justify-content: space-around;
+    align-items: center;
+} */
+
+/* .main .report_issue,
+.main .view_reports {
+    margin-left: 250px;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.reports{
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 30px;
+    margin-right: 250px;
+}
+
+.report_issue a,
+.view_reports a {
+    display: inline-block;
+    padding: 15px 25px;
+    border-radius: 30px;
+    background-color: #172621;
+    color: white;
+    transition: background-color 0.3s;
+}
+
+.report_issue a:hover,
+.view_reports a:hover {
+    color:#75A808;
+}
+
+.worst_hotspots {
+    width: 100%;
+    height: 500px;
+    max-width: 1100px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 5px;
+    margin: 0 auto; 
+    overflow: hidden; 
+    position: relative;
+} */
+
+/* Slideshow container */
+.slideshow {
+        position: relative;
+        max-width: 100%;
+        overflow: hidden;
+        border-top-style: solid;
+        border-right-style: solid;
+        border-bottom-style: solid;
+        border-left-style: solid;
+        
+    }
+
+    .slide {
+        display: none;
+        width: 100%;
+        text-align: center;
+    }
+
+    .slide img {
+        width: 100%; /* Ensure the image takes the full width of its container */
+        height: auto; /* Maintain aspect ratio */
+    }
+
+    .slide.fade {
+        animation: fade 1s ease-; /* Adjust timing as needed */
+    }
+    
+    @keyframes fade {
+        0% {
+            opacity: 0;
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+/* Footer styles */
+.footer {
+    background-color: #172621;
+    color: #ffffff;
+    padding: 25px 0;
+}
+
+.footer .container {
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+}
+
+
+.footer .about,
+.footer .copyright,
+.footer .ecologic,
+.footer .civica-mobilitas,
+.footer .ced {
+    font-size: 16px;
+}
+
+.footer a {
+    color: #ffffff;
+    text-decoration: none; /* Optional: Remove underline from links */
+}
+
+.footer a:hover {
+    color: #ffffff; /* Ensure color remains white on hover */
+}
+
+.footer a:visited {
+    color: #ffffff; /* Ensure color remains white after visit */
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .logo_part, .list_part {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .name, .about_us {
+        text-align: center;
+        width: 100%;
+    }
+
+    .name {
+        margin-bottom: 10px;
+    }
+
+    .col {
+        flex-basis: 100%;
+        text-align: center;
+    }
+
+    .main .container {
+        flex-direction: column;
+    }
+
+    .btn, .btn1 {
+        margin: 10px 0;
+    }
+}
